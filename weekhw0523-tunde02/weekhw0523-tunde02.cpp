@@ -1,4 +1,4 @@
-﻿#include <stdlib.h>
+#include <stdlib.h>
 #include <time.h>
 #include "Homework.h"
 
@@ -9,5 +9,6 @@ int main()
     srand(Seed);
 
     //Homework02_Run();
-    Homework03_Run();
+    //Homework03_Run();
+    Homework04_Run();
 }

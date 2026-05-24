@@ -228,3 +228,224 @@ bool IsGameWin(int PlayerCash, int MinimumBet)
 {
 	return PlayerCash > MinimumBet;
 }
+
+void Homework04_Run()
+{
+	// 4. 도둑 잡기 만들기
+	//   - Homework04_Run(); 함수로 실행 가능해야 함.
+	//   - 시작 금액 10000
+	//   - 한판에 무조건 최소 100 배팅해야 함.만약 소지금액이 100 이하일 경우 게임 종료.
+	//   - 딜러는 A~K까지의 트럼프 카드 중 2장을 중복없이 선택하고 조커 카드가 추가된다.
+	//   - 플레이어는 딜러의 카드 중 한장을 선택한다.
+	//   - 만약 플레이어가 조커를 뽑았다면 플레이어의 승리.배팅 금액의 2배를 받는다.
+	//   - 플레이어가 조커를 뽑지 못했다면 다음 게임을 시작하거나 배팅 금액의 2배를 추가로 지불하고 한번 더 선택할 수 있다.
+
+	const int InitialCash		= 10000;
+	const int MinimumBet		= 100;
+	const int WinMultiplier		= 2;
+	const int RetryMultiplier	= 2;
+	const int DealerHandCount	= 3;
+	const int MaximumCardNumber	= 13;
+	const int JokerCardNumber	= 0;
+	const int RetryChoice		= 2;
+
+	int PlayerCash = InitialCash;
+	int DealerHand[DealerHandCount] = { 0 };
+	bool IsRevealed[DealerHandCount] = { false };
+	bool IsDrawed[MaximumCardNumber] = { false };
+
+	while (CanPlayChaseTheJoker(PlayerCash, MinimumBet))
+	{
+		int PlayerBet = 0;
+		while (!IsValidBet(PlayerCash, PlayerBet, MinimumBet))
+		{
+			printf("[소지 금액 : %d ￦  |  최소 배팅 금액 %d ￦  |  최대 배팅 금액 %d ￦]\n", PlayerCash, MinimumBet, PlayerCash);
+			printf("배팅 금액을 입력하세요 : ");
+			PlayerBet = SafeInput(0);
+
+			if (!IsValidBet(PlayerCash, PlayerBet, MinimumBet))
+			{
+				printf("[ERROR]  올바른 배팅 금액을 입력해주세요\n");
+			}
+		}
+
+		PlayerCash -= PlayerBet;
+
+		InitializeArray(DealerHand, DealerHandCount, 0);
+		InitializeArray(IsRevealed, DealerHandCount, false);
+		InitializeArray(IsDrawed, MaximumCardNumber, false);
+
+		DrawRandomCards(DealerHand, IsDrawed, DealerHandCount, MaximumCardNumber);
+		ShuffleHand(DealerHand, DealerHandCount);
+
+		bool IsWin = PlayChaseTheJoker(DealerHand, IsRevealed, PlayerBet, DealerHandCount, JokerCardNumber, WinMultiplier, PlayerCash);
+
+		if (!IsWin && CanPlayChaseTheJoker(PlayerCash, PlayerBet * RetryMultiplier))
+		{
+			printf("배팅 금액의 %d배(%d ￦)를 지불하면 카드를 한 번 더 선택할 수 있습니다.\n", RetryMultiplier, PlayerBet * RetryMultiplier);
+			printf("1) 다음 게임으로   2) 한 번 더 선택\n");
+			printf(" : ");
+			int PlayerRechoice = SafeInput(0);
+
+			while (PlayerRechoice < 1 || PlayerRechoice > 2)
+			{
+				printf("[ERROR]  1, 2번 중에 선택해주세요 : ");
+				PlayerRechoice = SafeInput(0);
+			}
+
+			if (PlayerRechoice == RetryChoice)
+			{
+				int RetryBet = PlayerBet * RetryMultiplier;
+				PlayerCash -= RetryBet;
+				PlayerBet += RetryBet;
+
+				PlayChaseTheJoker(DealerHand, IsRevealed, PlayerBet, DealerHandCount, JokerCardNumber, WinMultiplier, PlayerCash);
+			}
+		}
+
+		PrintDivider('=', 100);
+	}
+
+	printf("게임이 종료되었습니다.\n");
+}
+
+bool CanPlayChaseTheJoker(int PlayerCash, int MinimumBet)
+{
+	return PlayerCash >= MinimumBet;
+}
+
+bool PlayChaseTheJoker(int* DealerHand, bool* IsRevealed, int PlayerBet, int DealerHandCount, int JokerCardNumber, int WinMultiplier, int& OutPlayerCash)
+{
+	bool IsWin = false;
+
+	PrintDealerHand(DealerHand, IsRevealed, DealerHandCount, JokerCardNumber);
+	printf("확인할 카드를 선택하세요 : ");
+	int PlayerChoice = ChooseCard(IsRevealed, DealerHandCount);
+
+	PrintDealerHand(DealerHand, IsRevealed, DealerHandCount, JokerCardNumber);
+
+	if (IsJokerCard(DealerHand, PlayerChoice, JokerCardNumber))
+	{
+		OutPlayerCash += PlayerBet * WinMultiplier;
+		IsWin = true;
+		printf("조커를 찾으셨습니다!!!\n");
+		printf("[소지 금액 : %d ￦]\n", OutPlayerCash);
+	}
+	else
+	{
+		printf("조커를 찾지 못했습니다...\n\n");
+		printf("[소지 금액 : %d ￦]\n", OutPlayerCash);
+	}
+
+	return IsWin;
+}
+
+void PrintDealerHand(int* Hand, bool* IsRevealed, int Length, int JokerCardNumber)
+{
+	for (int i = 0; i < Length; i++)
+	{
+		printf("┏━━━━━━┓  ");
+	}
+	printf("\n");
+
+	for (int i = 0; i < Length; i++)
+	{
+		printf("┃      ┃  ");
+	}
+	printf("\n");
+
+	for (int i = 0; i < Length; i++)
+	{
+		if (!IsRevealed[i])
+		{
+			printf("┃   ?  ┃  ");
+		}
+		else if (Hand[i] == JokerCardNumber)
+		{
+			printf("┃ JOKER┃  ");
+		}
+		else if (Hand[i] == 11)
+		{
+			printf("┃   J  ┃  ");
+		}
+		else if (Hand[i] == 12)
+		{
+			printf("┃   Q  ┃  ");
+		}
+		else if (Hand[i] == 13)
+		{
+			printf("┃   K  ┃  ");
+		}
+		else
+		{
+			printf("┃  %2d  ┃  ", Hand[i]);
+		}
+	}
+	printf("\n");
+
+	for (int i = 0; i < Length; i++)
+	{
+		printf("┃      ┃  ");
+	}
+	printf("\n");
+
+	for (int i = 0; i < Length; i++)
+	{
+		printf("┗━━━━━━┛  ");
+	}
+	printf("\n\n");
+}
+
+void DrawRandomCards(int* Hand, bool* IsDrawed, int Length, int MaximumCardNumber)
+{
+	for (int i = 0; i < Length - 1; i++)
+	{
+		int RandomCard = rand() % MaximumCardNumber + 1;
+		while (IsDrawed[RandomCard - 1])
+		{
+			RandomCard = rand() % MaximumCardNumber + 1;
+		}
+
+		IsDrawed[RandomCard - 1] = true;
+		Hand[i] = RandomCard;
+	}
+}
+
+void ShuffleHand(int* Hand, int Length)
+{
+	// Fisher-Yates 셔플 알고리즘으로 핸드를 섞는다
+
+	for (int i = Length - 1; i > -1; i--)
+	{
+		int RandomIndex = rand() % (i + 1);
+
+		int Temp = Hand[RandomIndex];
+		Hand[RandomIndex] = Hand[i];
+		Hand[i] = Temp;
+	}
+}
+
+int ChooseCard(bool* IsRevealed, int DealerHandCount)
+{
+	int PlayerChoice = SafeInput(0);
+	while (PlayerChoice < 1 || PlayerChoice > DealerHandCount)
+	{
+		printf("[ERROR]  ");
+		for (int i = 0; i < DealerHandCount; i++)
+		{
+			printf("%d ", i + 1);
+		}
+		printf("번 중에 선택해주세요 : ");
+
+		PlayerChoice = SafeInput(0);
+	}
+
+	IsRevealed[PlayerChoice - 1] = true;
+
+	return PlayerChoice;
+}
+
+bool IsJokerCard(int* DealerHand, int PlayerChoice, int JokerCardNumber)
+{
+	return DealerHand[PlayerChoice - 1] == JokerCardNumber;
+}
