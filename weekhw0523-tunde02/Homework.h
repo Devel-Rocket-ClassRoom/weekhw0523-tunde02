@@ -55,3 +55,25 @@ void DrawRandomCards(int* Hand, bool* IsDrawed, int Length, int MaximumCardNumbe
 void ShuffleHand(int* Hand, int Length);
 int ChooseCard(bool* IsRevealed, int DealerHandCount);
 bool IsJokerCard(int* DealerHand, int PlayerChoice, int JokerCardNumber);
+
+// 과제5
+// 미로 탈출 게임에 랜덤 인카운터를 추가하여 적과의 턴제 전투 만들기
+void Homework05_Run();
+
+enum TileType { Road, Wall, Start, End, Player, Grave };
+enum DirectionType { Up, Down, Left, Right };
+const int Dx[4] = { -1, 1, 0, 0 };
+const int Dy[4] = { 0, 0, -1, 1 };
+
+bool CanPlayMazeGame(int PlayerHP, int PlayerX, int PlayerY, int EndX, int EndY);
+void ShowMaze(int* Maze, int RowSize, int ColumnSize);
+void ShowMovableDirections(int* Maze, int RowSize, int ColumnSize, int PlayerX, int PlayerY);
+DirectionType InputDirection();
+int DirectionType2Int(DirectionType Direction);
+bool IsValidDirectionType(DirectionType Target);
+bool CanMoveTo(int* Maze, int RowSize, int ColumnSize, int PlayerX, int PlayerY, DirectionType Direction);
+
+void PrintHpBar(int HP);
+bool IsEncountered(int EncounterRate);
+int ProcessEncounter(int PrevPlayerHP, int InitialHP, int MinimumDamage, int MaximumDamage, int CriticalRate, int CriticalDamageMultiplier);
+int CalcDamage(int MinimumDamage, int MaximumDamage, int CriticalRate, int CriticalDamageMultiplier, bool& IsCritical);
